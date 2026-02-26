@@ -1,0 +1,26 @@
+[project]
+name = "langchain-langfuse-test"
+version = "0.1.0"
+description = "Kubernetes cluster validation: LangChain + Langfuse + Ollama (Gemma3)"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=0.3",
+    "langchain-ollama>=0.3",
+    "langchain-core>=0.3",
+    "langchain-community>=0.3",
+    "langgraph>=0.3",
+    "langfuse>=2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.14",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

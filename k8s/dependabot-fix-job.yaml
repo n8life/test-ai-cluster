@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dependabot-fix-agent
+  namespace: langchain-test
+  labels:
+    app: dependabot-fix-agent
+    purpose: security-remediation
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 7200
+  template:
+    metadata:
+      labels:
+        app: dependabot-fix-agent
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k8s002
+      containers:
+        - name: agent
+          image: nsmith2100/dependabot-fix-agent:latest
+          imagePullPolicy: Always
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: TARGET_REPO
+              value: "n8life/nftkv"
+            - name: OLLAMA_BASE_URL
+              value: "http://ollama.langchain-infra.svc.cluster.local:11434"
+            - name: OLLAMA_MODEL
+              value: "gemma3:27b"
+            - name: WORK_DIR
+              value: "/tmp/repos"
+            - name: LANGFUSE_HOST
+              value: "http://langfuse-web.langfuse.svc.cluster.local:3000"
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-credentials
+                  key: LANGFUSE_PUBLIC_KEY
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-credentials
+                  key: LANGFUSE_SECRET_KEY
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token
+                  key: GITHUB_TOKEN
+            - name: GH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token
+                  key: GITHUB_TOKEN
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"

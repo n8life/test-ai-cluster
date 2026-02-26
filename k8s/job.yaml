@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: langchain-langfuse-test
+  namespace: langchain-test
+  labels:
+    app: langchain-langfuse-test
+    purpose: cluster-validation
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: langchain-langfuse-test
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k8s002
+      containers:
+        - name: test
+          image: nsmith2100/langchain-langfuse-test:latest
+          imagePullPolicy: Always
+          env:
+            - name: OLLAMA_BASE_URL
+              value: "http://ollama.langchain-infra.svc.cluster.local:11434"
+            - name: OLLAMA_MODEL
+              value: "gemma3:27b"
+            - name: LANGFUSE_HOST
+              value: "http://langfuse-web.langfuse.svc.cluster.local:3000"
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-credentials
+                  key: LANGFUSE_PUBLIC_KEY
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-credentials
+                  key: LANGFUSE_SECRET_KEY
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
